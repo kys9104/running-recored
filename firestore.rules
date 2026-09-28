@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidRunningRecord(data) {
+      return data.userType is string && (data.userType == 'student' || data.userType == 'teacher')
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.date is string && data.date.size() > 0 && data.date.size() <= 20
+        && data.distanceKm is number && data.distanceKm >= 0 && data.distanceKm <= 200
+        && data.durationSeconds is number && data.durationSeconds >= 0 && data.durationSeconds <= 86400
+        && data.pace is string && data.pace.size() <= 30;
+    }
+
+    // Running Records Collection
+    match /running_records/{recordId} {
+      allow read: if true;
+      allow create: if isValidId(recordId) && isValidRunningRecord(incoming());
+      allow update: if isValidId(recordId) && isValidRunningRecord(incoming());
+      allow delete: if isValidId(recordId);
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Remix 사제동행 러닝",
+  "description": "신안해양과학고 사제동행을 위한 GPS 기반 러닝 기록 누적 및 반별 대항 랭킹 관리 웹 애플리케이션입니다.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

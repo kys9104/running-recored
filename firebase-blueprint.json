@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "RunningRecord": {
+      "title": "RunningRecord",
+      "description": "사제동행 러닝 학생 및 교사 러닝 활동 기록",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userType": { "type": "string", "enum": ["student", "teacher"] },
+        "grade": { "type": "string", "enum": ["1학년", "2학년"] },
+        "classNum": { "type": "string", "enum": ["1반", "2반"] },
+        "studentNo": { "type": "number", "minimum": 1, "maximum": 50 },
+        "name": { "type": "string", "maxLength": 50 },
+        "teacherRole": { "type": "string", "maxLength": 50 },
+        "contributedClass": { "type": "string" },
+        "date": { "type": "string", "maxLength": 10 },
+        "time": { "type": "string", "maxLength": 10 },
+        "distanceKm": { "type": "number", "minimum": 0, "maximum": 100 },
+        "durationSeconds": { "type": "number", "minimum": 0, "maximum": 86400 },
+        "pace": { "type": "string", "maxLength": 20 },
+        "memo": { "type": "string", "maxLength": 500 },
+        "imageUrl": { "type": "string", "maxLength": 2000000 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userType", "name", "date", "distanceKm", "durationSeconds", "pace"]
+    }
+  },
+  "firestore": {
+    "/running_records/{recordId}": {
+      "schema": "RunningRecord",
+      "description": "학생 및 교사의 러닝 기록 컬렉션"
+    }
+  }
+}
