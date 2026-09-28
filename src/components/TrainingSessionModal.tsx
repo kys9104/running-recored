@@ -229,8 +229,16 @@ export const TrainingSessionModal: React.FC<TrainingSessionModalProps> = ({
                     step="0.1"
                     min="0.5"
                     max="42.195"
-                    value={distanceKm}
-                    onChange={(e) => setDistanceKm(parseFloat(e.target.value) || 1)}
+                    value={distanceKm || ''}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setDistanceKm(0);
+                      } else {
+                        setDistanceKm(parseFloat(val) || 0);
+                      }
+                    }}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-extrabold text-blue-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                   <div className="flex gap-1">
@@ -262,8 +270,16 @@ export const TrainingSessionModal: React.FC<TrainingSessionModalProps> = ({
                     type="number"
                     min="5"
                     max="180"
-                    value={targetMinutes}
-                    onChange={(e) => setTargetMinutes(parseInt(e.target.value, 10) || 10)}
+                    value={targetMinutes || ''}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setTargetMinutes(0);
+                      } else {
+                        setTargetMinutes(parseInt(val, 10) || 0);
+                      }
+                    }}
                     className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-extrabold text-blue-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   />
                   <div className="flex gap-1">

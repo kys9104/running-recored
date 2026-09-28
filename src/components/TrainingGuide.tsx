@@ -627,8 +627,16 @@ export const TrainingGuide: React.FC<TrainingGuideProps> = ({
                 type="number"
                 step="0.5"
                 min="0.5"
-                value={targetDistance}
-                onChange={(e) => setTargetDistance(parseFloat(e.target.value) || 1)}
+                value={targetDistance || ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setTargetDistance(0);
+                  } else {
+                    setTargetDistance(parseFloat(val) || 0);
+                  }
+                }}
                 className="mt-3 w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800"
               />
             </div>

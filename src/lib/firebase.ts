@@ -200,13 +200,14 @@ export async function createRecord(recordData: Omit<RunningRecord, 'id' | 'creat
   const updated = [newRecord, ...current.filter(r => r.id !== newRecord.id)];
   saveLocalRecords(updated);
 
-  // 2. Firestore 클라우드 데이터베이스에 저장
+  // 2. Firestore 클라우드 데이터베이스에 저장 (undefined 필드 제거 후 저장)
   if (db && isFirebaseConfigured) {
     try {
       const docRef = doc(db, 'running_records', newRecord.id);
-      await setDoc(docRef, {
-        ...newRecord,
-      });
+      const sanitizedData = Object.fromEntries(
+        Object.entries(newRecord).filter(([_, v]) => v !== undefined)
+      );
+      await setDoc(docRef, sanitizedData);
       console.log('클라우드 Firestore에 러닝 기록 저장 완료:', newRecord.id);
     } catch (err) {
       console.error('Firestore 클라우드 기록 추가 실패:', err);
@@ -227,7 +228,10 @@ export async function updateRecord(id: string, updates: Partial<RunningRecord>):
   if (db && isFirebaseConfigured) {
     try {
       const docRef = doc(db, 'running_records', id);
-      await updateDoc(docRef, updates as any);
+      const sanitizedUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, v]) => v !== undefined)
+      );
+      await updateDoc(docRef, sanitizedUpdates as any);
       console.log('Firestore 기록 수정 완료:', id);
     } catch (err) {
       console.error('Firestore 수정 실패:', err);

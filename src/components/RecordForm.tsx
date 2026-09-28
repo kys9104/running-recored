@@ -560,7 +560,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
             />
           </div>
 
-          {/* 증빙 자료 첨부 (스마트워치 / 러닝앱 캡처 사진) - 필수 제출 */}
+          {/* 증빙 자료 첨부 (스마트워치 / 러닝앱 캡처 사진) */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
               <span className="flex items-center gap-1">
@@ -589,7 +589,6 @@ export const RecordForm: React.FC<RecordFormProps> = ({
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
-                  required
                 />
               </label>
             ) : (
