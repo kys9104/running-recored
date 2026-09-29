@@ -196,7 +196,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
       setSuccessMsg('러닝 기록이 성공적으로 등록되었습니다! 반별 랭킹에 즉시 반영됩니다.');
       if (clearPrefilled) clearPrefilled();
 
-      // 리셋 및 부모 알림 (랭킹 대시보드로 자동 이동)
+      // 리셋 및 부모 알림 (랭킹 대시보드로 즉시 자동 이동)
       setTimeout(() => {
         setIsSubmitting(false);
         setDistanceKm('');
@@ -208,7 +208,7 @@ export const RecordForm: React.FC<RecordFormProps> = ({
         setImagePreview(null);
         setSuccessMsg(null);
         onSuccess(finalRecord);
-      }, 800);
+      }, 400);
     } catch (err: any) {
       console.error('기록 저장 실패:', err);
       setErrorMsg('기록 저장 중 오류가 발생했습니다. 다시 시도해주세요.');

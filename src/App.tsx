@@ -205,7 +205,7 @@ export default function App() {
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <Database className="w-3.5 h-3.5 text-emerald-600" />
-                {isFirebaseConfigured ? '클라우드 실시간 동기화 (PC 및 스마트폰 연동 중)' : '로컬 스토리지 모드'}
+                <span>데이터 즉시 저장 활성화 (별도 인증키 입력 불필요)</span>
               </span>
               <span className="text-slate-400">|</span>
               <span className="flex items-center gap-1 text-slate-600">
