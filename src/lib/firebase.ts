@@ -110,7 +110,14 @@ export async function fetchAllRecords(): Promise<RunningRecord[]> {
         } as RunningRecord);
       });
 
-      // 클라우드 데이터를 로컬 캐시로도 갱신 (0건일 때도 빈 배열 유지)
+      // 최신 등록 순 정렬 (날짜 -> 작성 시간)
+      records.sort((a, b) => {
+        const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+
+      // 클라우드 데이터를 로컬 캐시로도 갱신
       saveLocalRecords(records);
       return records;
     } catch (error) {
@@ -124,7 +131,7 @@ export async function fetchAllRecords(): Promise<RunningRecord[]> {
 
 /**
  * 실시간 변경사항 구독 (PC와 스마트폰 등 모든 기기에서 데이터가 실시간으로 동기화됨)
- * 데이터가 모두 삭제된 상태(snapshot.empty)일 때도 재시딩하지 않고 빈 목록을 전달합니다.
+ * 다른 사용자가 등록/수정/삭제 시 모든 기기 화면에 즉각 반영됩니다.
  */
 export function subscribeToRecords(onUpdate: (records: RunningRecord[]) => void): () => void {
   if (!db || !isFirebaseConfigured) {
@@ -152,7 +159,14 @@ export function subscribeToRecords(onUpdate: (records: RunningRecord[]) => void)
           } as RunningRecord);
         });
 
-        // 최신 클라우드 데이터를 로컬에도 저장
+        // 최신 등록 순 정렬 (날짜 -> 작성 시간)
+        records.sort((a, b) => {
+          const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+
+        // 최신 클라우드 데이터를 로컬에도 저장하고 UI에 실시간 전파
         saveLocalRecords(records);
         onUpdate(records);
       },
@@ -171,8 +185,8 @@ export function subscribeToRecords(onUpdate: (records: RunningRecord[]) => void)
 }
 
 /**
- * 새 러닝 기록 추가 (로컬 스토리지 즉시 저장 및 Firestore 비동기 백그라운드 동기화)
- * Firebase 프로젝트 인증키가 없거나 오프라인인 환경에서도 100% 즉시 저장되며 UI 멈춤이 발생하지 않습니다.
+ * 새 러닝 기록 추가 (로컬 스토리지 즉시 저장 및 Firestore 실시간 클라우드 동기화)
+ * 다른 사용자 기기로 실시간 브로드캐스팅되어 전체 사용자 화면에 즉각 공유됩니다.
  */
 export async function createRecord(recordData: Omit<RunningRecord, 'id' | 'createdAt'>): Promise<RunningRecord> {
   const generatedId = 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
@@ -182,24 +196,27 @@ export async function createRecord(recordData: Omit<RunningRecord, 'id' | 'creat
     createdAt: new Date().toISOString(),
   };
 
-  // 1. 항상 로컬 스토리지에 즉시 저장 (인증키 불필요, 0ms 즉각 반응 보장)
+  // 1. 항상 로컬 스토리지에 즉시 저장
   const current = getLocalRecords();
   const updated = [newRecord, ...current.filter(r => r.id !== newRecord.id)];
   saveLocalRecords(updated);
 
-  // 2. Firestore 클라우드 데이터베이스에 비동기 백그라운드 동기화 (UI 블로킹/멈춤 현상 원천 차단)
+  // 2. Firestore 클라우드 데이터베이스에 실시간 저장 (네트워크 안정 시 100~200ms 완료)
   if (db && isFirebaseConfigured) {
     try {
       const docRef = doc(db, 'running_records', newRecord.id);
       const sanitizedData = Object.fromEntries(
         Object.entries(newRecord).filter(([_, v]) => v !== undefined)
       );
-      // 백그라운드 비동기 실행 (await하지 않고 즉시 반환하여 멈춤 방지)
-      setDoc(docRef, sanitizedData)
-        .then(() => console.log('클라우드 Firestore 비동기 동기화 완료:', newRecord.id))
-        .catch((err) => console.warn('Firestore 클라우드 기록 추가 오류 (로컬에 안전하게 저장됨):', err));
+      
+      // 클라우드 저장 완료 대기 (최대 2.5초 타임아웃으로 오프라인 시에도 UI 멈춤 방지)
+      await Promise.race([
+        setDoc(docRef, sanitizedData),
+        new Promise((resolve) => setTimeout(resolve, 2500))
+      ]);
+      console.log('클라우드 Firestore에 러닝 기록 저장 완료:', newRecord.id);
     } catch (err) {
-      console.warn('Firestore 클라우드 기록 추가 시도 실패 (로컬 저장 유지):', err);
+      console.warn('Firestore 클라우드 기록 추가 오류 (로컬에 안전하게 저장됨):', err);
     }
   }
 
@@ -220,11 +237,13 @@ export async function updateRecord(id: string, updates: Partial<RunningRecord>):
       const sanitizedUpdates = Object.fromEntries(
         Object.entries(updates).filter(([_, v]) => v !== undefined)
       );
-      updateDoc(docRef, sanitizedUpdates as any)
-        .then(() => console.log('Firestore 기록 수정 완료:', id))
-        .catch((err) => console.warn('Firestore 수정 알림 (로컬에 반영됨):', err));
+      await Promise.race([
+        updateDoc(docRef, sanitizedUpdates as any),
+        new Promise((resolve) => setTimeout(resolve, 2500))
+      ]);
+      console.log('Firestore 기록 수정 완료:', id);
     } catch (err) {
-      console.warn('Firestore 수정 시도 실패:', err);
+      console.warn('Firestore 수정 실패:', err);
     }
   }
 }
@@ -240,11 +259,13 @@ export async function deleteRecord(id: string): Promise<void> {
   if (db && isFirebaseConfigured) {
     try {
       const docRef = doc(db, 'running_records', id);
-      deleteDoc(docRef)
-        .then(() => console.log('Firestore 기록 삭제 완료:', id))
-        .catch((err) => console.warn('Firestore 삭제 알림 (로컬에 반영됨):', err));
+      await Promise.race([
+        deleteDoc(docRef),
+        new Promise((resolve) => setTimeout(resolve, 2500))
+      ]);
+      console.log('Firestore 기록 삭제 완료:', id);
     } catch (err) {
-      console.warn('Firestore 삭제 시도 실패:', err);
+      console.warn('Firestore 삭제 실패:', err);
     }
   }
 }

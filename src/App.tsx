@@ -52,7 +52,7 @@ export default function App() {
 
     // PC와 스마트폰 등 기기 간 실시간 자동 동기화 리스너 등록
     const unsubscribe = subscribeToRecords((updatedRecords) => {
-      if (updatedRecords && updatedRecords.length > 0) {
+      if (updatedRecords) {
         setRecords(updatedRecords);
       }
       setIsLoading(false);
@@ -64,24 +64,14 @@ export default function App() {
   }, []);
 
   // 신규 기록 제출 완료 시
-  const handleRecordAdded = async (newRecord: RunningRecord) => {
-    // 1) 즉시 로컬 상태에 반영하여 대시보드 탭 전환 시 바로 표시
+  const handleRecordAdded = (newRecord: RunningRecord) => {
+    // 1) 즉시 로컬 상태에 선반영하여 대시보드 탭 전환 시 지연 없이 표시
     setRecords((prev) => {
       const exists = prev.some((r) => r.id === newRecord.id);
       return exists ? prev : [newRecord, ...prev];
     });
     clearPrefilled();
     setActiveTab('leaderboard');
-
-    // 2) 최신 데이터 원격/로컬 스토리지와 동기화
-    try {
-      const fresh = await fetchAllRecords();
-      if (fresh && fresh.length > 0) {
-        setRecords(fresh);
-      }
-    } catch (err) {
-      console.warn('기록 동기화 중 오류:', err);
-    }
   };
 
   // GPS 측정 완료 후 기록 등록 탭으로 내보내기
@@ -205,7 +195,7 @@ export default function App() {
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <Database className="w-3.5 h-3.5 text-emerald-600" />
-                <span>데이터 즉시 저장 활성화 (별도 인증키 입력 불필요)</span>
+                <span>클라우드 실시간 동기화 활성화 (전 기기 실시간 공유)</span>
               </span>
               <span className="text-slate-400">|</span>
               <span className="flex items-center gap-1 text-slate-600">
